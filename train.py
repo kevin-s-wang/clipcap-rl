@@ -12,11 +12,23 @@ from modeling_clipcap_rl import ClipCapRLModel
 from typing import Optional, List, Dict, Any
 from transformers import HfArgumentParser
 import torch.nn.functional as F
-
+from typing import Tuple
 
 class ImageCaptionDataCollator(DefaultDataCollator):
-    def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, Any]:
-        return features
+    def __call__(self, features: List[Tuple]) -> Dict[str, Any]:
+        _features = {
+            'image_embeddings': [],
+            'caption_embeddings': [],
+            'tokens': [],
+            'mask': []
+        }
+
+        for feature in features:
+            _features['image_embeddings'].append(feature[0])
+            _features['caption_embeddings'].append(feature[1])
+            _features['tokens'].append(feature[2])
+            _features['mask'].append(feature[3])
+        return _features
 
 @dataclass
 class ScriptArguments:
@@ -28,7 +40,7 @@ class ClipCapRLTrainer(Trainer):
         self.prefix_length = prefix_length
 
     def compute_loss(self, model, inputs, return_outputs=False):
-        print('inputs: ', inputs)
+        # print('inputs: ', inputs)
         # x, _, y, mask = inputs
         outputs = model(**inputs)
         logits = outputs.logits[:, self.prefix_length-1: -1]

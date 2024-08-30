@@ -59,9 +59,4 @@ class ImageCaptionDataset(Dataset):
         mask = mask.float()
         mask = torch.cat((torch.ones(mask.shape[0], self.max_length), mask), dim=1)
 
-        return {
-            "image_embeddings": image_embeddings,
-            "caption_embeddings": caption_embeddings,
-            "tokens": input_ids, 
-            "mask": mask
-        }
+        return  image_embeddings, caption_embeddings, input_ids, mask
