@@ -67,7 +67,7 @@ if __name__ == "__main__":
         # eval_strategy="steps",
         # eval_steps=50,
         save_strategy="steps",
-        save_steps=50,
+        save_steps=1000,
         logging_steps=50,
         remove_unused_columns=False,
         optim="adamw_torch",
