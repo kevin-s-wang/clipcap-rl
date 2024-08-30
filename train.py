@@ -76,7 +76,7 @@ if __name__ == "__main__":
         lr_scheduler_type="constant",
         num_train_epochs=2,
         warmup_steps=5,
-        load_best_model_at_end=True,
+        # load_best_model_at_end=True,
         ddp_find_unused_parameters=False,
     )
 
