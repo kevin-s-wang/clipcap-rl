@@ -246,6 +246,8 @@ class ClipCapRLModel(PreTrainedModel):
         self.prefix_encoder.train(mode)
         if self.config.use_lora:
             self.language_model.train(mode)
+        else:
+            self.language_model.train(False)
         return self
     
     def eval(self):
