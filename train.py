@@ -28,7 +28,7 @@ if __name__ == "__main__":
         output_dir="./",
         per_device_train_batch_size=64,
         gradient_accumulation_steps=4,
-        gradient_checkpointing=True,
+        # gradient_checkpointing=True,
         optim="paged_adamw_8bit",
         bf16=True,
         learning_rate=2e-5,
