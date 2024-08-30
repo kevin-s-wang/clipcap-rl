@@ -20,6 +20,7 @@ class ModelConfig:
     language_model_id: Optional[str] = field(default="microsoft/Phi-3.5-mini-instruct", metadata={"help": "The language model id."})
     prefix_length: Optional[int] = field(default=10, metadata={"help": "The prefix length."})
     max_length: Optional[int] = field(default=20, metadata={"help": "The maximum length."})
+    d_model: Optional[int] = field(default=3072, metadata={"help": "The model dimension."})
     d_clip: Optional[int] = field(default=512, metadata={"help": "The CLIP dimension."})
     n_heads: Optional[int] = field(default=8, metadata={"help": "The number of heads."})
     n_layers: Optional[int] = field(default=12, metadata={"help": "The number of layers."})

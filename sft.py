@@ -10,7 +10,7 @@ from model import ClipCapModel, ModelConfig
 
 
 if __name__ == "__main__":
-    conf = ModelConfig(data_dir="data")
+    conf = ModelConfig(data_dir="/kaggle/input/preprocessed-image-caption-dataset/data")
 
     training_args = TrainingArguments(
         report_to="tensorboard",
