@@ -107,7 +107,6 @@ if __name__ == "__main__":
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         tokenizer=model.tokenizer,
-        compute_loss=compute_loss,
         data_collator=ImageCaptionDataCollator(),
     )
 
