@@ -60,7 +60,7 @@ if __name__ == "__main__":
         report_to="tensorboard",
         run_name=f"gpt2-clipcap-{datetime.now().strftime('%Y-%m-%d-%H-%M-%s')}",
         output_dir="./",
-        per_device_train_batch_size=32,
+        per_device_train_batch_size=64,
         per_device_eval_batch_size=32,
         gradient_accumulation_steps=2,
         save_total_limit=3,
