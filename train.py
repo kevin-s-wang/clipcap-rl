@@ -1,7 +1,7 @@
 from transformers import (
     TrainingArguments,
     Trainer,
-    DataCollatorMixin,
+    DataCollator,
 )
 
 from datetime import datetime
@@ -57,7 +57,7 @@ if __name__ == "__main__":
         split="val",
         data_dir=args.data_dir)
 
-    class ImageCaptionDataCollator(DataCollatorMixin):
+    class ImageCaptionDataCollator(DataCollator):
         def collate_batch(self, features):            
             print(features)
 
