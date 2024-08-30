@@ -186,17 +186,18 @@ class ClipCapRLModel(PreTrainedModel):
     def setup(self):
 
         _model = AutoModelForCausalLM.from_pretrained(
-                    self.config.language_model_id, 
-                    quantization_config= BitsAndBytesConfig(
-                        # Load the model with 4-bit quantization
-                        load_in_4bit=True,
-                        # Use double quantization
-                        bnb_4bit_use_double_quant=True,
-                        # Use 4-bit Normal Float for storing the base model weights in GPU memory
-                        bnb_4bit_quant_type="nf4",
-                        # De-quantize the weights to 16-bit (Brain) float before the forward/backward pass
-                        bnb_4bit_compute_dtype=torch.bfloat16,
-                    )
+                    self.config.language_model_id,
+                    
+                    # quantization_config= BitsAndBytesConfig(
+                    #     # Load the model with 4-bit quantization
+                    #     load_in_4bit=True,
+                    #     # Use double quantization
+                    #     bnb_4bit_use_double_quant=True,
+                    #     # Use 4-bit Normal Float for storing the base model weights in GPU memory
+                    #     bnb_4bit_quant_type="nf4",
+                    #     # De-quantize the weights to 16-bit (Brain) float before the forward/backward pass
+                    #     bnb_4bit_compute_dtype=torch.bfloat16,
+                    # )
                 )
         
         self.tokenizer = AutoTokenizer.from_pretrained(self.config.language_model_id)
@@ -258,7 +259,5 @@ class ClipCapRLModel(PreTrainedModel):
         if tokens is not None:
             token_embeddings = self.language_model.get_input_embeddings()(tokens).squeeze(1)
             x = torch.cat((x, token_embeddings), dim=1)
-        print('x: ', x.shape)
-        print('mask: ', mask.shape)
         x = self.language_model(inputs_embeds=x, attention_mask=mask)
         return x
