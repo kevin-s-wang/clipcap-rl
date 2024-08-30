@@ -1,6 +1,6 @@
 from transformers import PreTrainedModel
 
-from .configuration_clipcap_rl import ClipCapRLConfig
+from configuration_clipcap_rl import ClipCapRLConfig
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
