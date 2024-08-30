@@ -12,6 +12,10 @@ from modeling_clipcap_rl import ClipCapRLModel
 from typing import Optional
 from transformers import HfArgumentParser
 
+class ImageCaptionDataCollator(DataCollator):
+    def collate_batch(self, features, return_tensors=None):            
+        print(features)
+        return features
 
 @dataclass
 class ScriptArguments:
@@ -57,11 +61,7 @@ if __name__ == "__main__":
         split="val",
         data_dir=args.data_dir)
 
-    class ImageCaptionDataCollator(DataCollator):
-        def collate_batch(self, features):            
-            print(features)
 
-            return features
 
     trainer = Trainer(
         model=model,
