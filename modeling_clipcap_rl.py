@@ -184,10 +184,9 @@ class ClipCapRLModel(PreTrainedModel):
         self.setup()
 
     def setup(self):
-
         _model = AutoModelForCausalLM.from_pretrained(
                     self.config.language_model_id,
-                    
+
                     # quantization_config= BitsAndBytesConfig(
                     #     # Load the model with 4-bit quantization
                     #     load_in_4bit=True,

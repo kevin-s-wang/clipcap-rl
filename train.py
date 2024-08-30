@@ -34,6 +34,7 @@ class ClipCapRLTrainer(Trainer):
     def __init__(self, prefix_length: int, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.prefix_length = prefix_length
+        # self.tokenizer = tokenizer
 
     def compute_loss(self, model, inputs, return_outputs=False):
         # print('inputs: ', inputs)
@@ -44,7 +45,7 @@ class ClipCapRLTrainer(Trainer):
         loss = F.cross_entropy(
                 logits.contiguous().view(-1, logits.shape[-1]), 
                 inputs['tokens'].flatten(),
-                ignore_index=model.tokenizer.pad_token_id)
+                ignore_index=self.tokenizer.pad_token_id)
         return (loss, outputs) if return_outputs else loss
 
 # def compute_metrics(preds, labels):
