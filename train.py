@@ -7,7 +7,7 @@ from transformers import (
 from datetime import datetime
 from dataclasses import dataclass
 from data import ImageCaptionDataset
-from configuration_clipcap_rl import ModelConfig
+from configuration_clipcap_rl import ClipCapRLConfig
 from model import ClipCapModel
 from typing import Optional
 from transformers import HfArgumentParser
@@ -40,7 +40,7 @@ if __name__ == "__main__":
         ddp_find_unused_parameters=False,
     )
 
-    conf = ModelConfig()
+    conf = ClipCapRLConfig()
     model = ClipCapModel(conf)
     
     train_dataset = ImageCaptionDataset(
