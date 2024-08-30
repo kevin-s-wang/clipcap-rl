@@ -62,7 +62,7 @@ if __name__ == "__main__":
         output_dir="./",
         per_device_train_batch_size=64,
         per_device_eval_batch_size=32,
-        gradient_accumulation_steps=2,
+        gradient_accumulation_steps=4,
         save_total_limit=3,
         # eval_strategy="steps",
         # eval_steps=50,
