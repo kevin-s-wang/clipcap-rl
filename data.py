@@ -50,11 +50,15 @@ class ImageCaptionDataset(Dataset):
                                         max_length=self.max_length, 
                                         return_tensors='pt')
         
+        
         image_embeddings = torch.tensor(row['image_embeddings'])
         caption_embeddings = torch.tensor(row['caption_embeddings'])
         
         input_ids = caption_tokens['input_ids']
         mask = caption_tokens['attention_mask']
+
+        print('input_ids: ', input_ids.shape)
+        print('mask: ', mask.shape)
         
         mask = mask.float()
         mask = torch.cat((torch.ones(mask.shape[0], self.max_length), mask), dim=1)
