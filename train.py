@@ -70,7 +70,7 @@ if __name__ == "__main__":
         save_steps=50,
         logging_steps=50,
         remove_unused_columns=False,
-        optim="adamw",
+        optim="adamw_torch",
         bf16=True,
         learning_rate=2e-5,
         lr_scheduler_type="constant",
