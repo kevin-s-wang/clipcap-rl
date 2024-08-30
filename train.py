@@ -11,6 +11,7 @@ from configuration_clipcap_rl import ClipCapRLConfig
 from modeling_clipcap_rl import ClipCapRLModel
 from typing import Optional, List, Dict, Any
 from transformers import HfArgumentParser
+import torch.nn.functional as F
 
 
 class ImageCaptionDataCollator(DefaultDataCollator):
@@ -21,6 +22,9 @@ class ImageCaptionDataCollator(DefaultDataCollator):
 @dataclass
 class ScriptArguments:
     data_dir: Optional[str] = "data"
+
+# def compute_metrics(preds, labels):
+#     return {}
 
 if __name__ == "__main__":
 
@@ -69,12 +73,24 @@ if __name__ == "__main__":
         data_dir=args.data_dir)
 
 
+    def compute_loss(model, inputs, return_outputs=False):
+        x, _, y, mask = inputs
+        outputs = model(x, y, mask)
+        logits = outputs.logits[:, conf.prefix_length-1: -1]
+
+        loss = F.cross_entropy(
+                logits.contiguous().view(-1, logits.shape[-1]), 
+                y.flatten(),
+                ignore_index=model.tokenizer.pad_token_id)
+        return (loss, outputs) if return_outputs else loss
+
     trainer = Trainer(
         model=model,
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         tokenizer=model.tokenizer,
+        compute_loss=compute_loss,
         data_collator=ImageCaptionDataCollator(),
     )
 
