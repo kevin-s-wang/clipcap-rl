@@ -166,7 +166,7 @@ class VisionPrefixModel(nn.Module):
         self.prefix_const = nn.Parameter(torch.randn(self.conf.prefix_length, self.conf.d_model), requires_grad=True)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.proj_in(x)
+        x = self.in_proj(x)
         x = x.view(-1, self.conf.prefix_length, self.conf.d_model)
         prefix = self.prefix_const.unsqueeze(0).expand(x.shape[0], -1, -1)
         x = torch.cat((x, prefix), dim=1)
