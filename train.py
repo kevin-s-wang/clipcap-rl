@@ -29,6 +29,7 @@ class ClipCapRLTrainer(Trainer):
         self.prefix_length = prefix_length
 
     def compute_loss(self, model, inputs, return_outputs=False):
+        print(inputs.shape)
         x, _, y, mask = inputs
         outputs = model(x, y, mask)
         logits = outputs.logits[:, self.prefix_length-1: -1]
