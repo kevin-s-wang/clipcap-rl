@@ -5,9 +5,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math
-from transformers import LoraConfig, BitsAndBytesConfig
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from peft import prepare_model_for_kbit_training, get_peft_model
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+from peft import prepare_model_for_kbit_training, get_peft_model, LoraConfig
 from typing import Optional
 
 
