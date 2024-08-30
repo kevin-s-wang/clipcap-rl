@@ -1,7 +1,7 @@
 from transformers import (
     TrainingArguments,
     Trainer,
-    DefaultDataCollator,
+    DataCollatorMixin,
 )
 
 from datetime import datetime
@@ -57,13 +57,19 @@ if __name__ == "__main__":
         split="val",
         data_dir=args.data_dir)
 
+    class ImageCaptionDataCollator(DataCollatorMixin):
+        def collate_batch(self, features):            
+            print(features)
+
+            return features
+
     trainer = Trainer(
         model=model,
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         tokenizer=model.tokenizer,
-        # data_collator=DefaultDataCollator(),
+        data_collator=ImageCaptionDataCollator(),
     )
 
     trainer.train()
