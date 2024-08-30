@@ -1,7 +1,7 @@
 from transformers import (
     TrainingArguments,
     Trainer,
-    DataCollator,
+    DefaultDataCollator,
 )
 
 from datetime import datetime
@@ -12,6 +12,11 @@ from modeling_clipcap_rl import ClipCapRLModel
 from typing import Optional, List, Dict, Any
 from transformers import HfArgumentParser
 
+
+class ImageCaptionDataCollator(DefaultDataCollator):
+    def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, Any]:
+        print(features)
+        return features
 
 @dataclass
 class ScriptArguments:
@@ -70,6 +75,7 @@ if __name__ == "__main__":
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         tokenizer=model.tokenizer,
+        data_collator=ImageCaptionDataCollator(),
     )
 
     trainer.train()
