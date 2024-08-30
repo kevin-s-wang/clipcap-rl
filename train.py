@@ -8,7 +8,7 @@ from datetime import datetime
 from dataclasses import dataclass
 from data import ImageCaptionDataset
 from configuration_clipcap_rl import ClipCapRLConfig
-from model import ClipCapModel
+from modeling_clipcap_rl import ClipCapRLModel
 from typing import Optional
 from transformers import HfArgumentParser
 
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     )
 
     conf = ClipCapRLConfig()
-    model = ClipCapModel(conf)
+    model = ClipCapRLModel(conf)
     
     train_dataset = ImageCaptionDataset(
         max_length=conf.max_length,
