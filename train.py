@@ -15,7 +15,7 @@ from transformers import HfArgumentParser
 
 class ImageCaptionDataCollator(DefaultDataCollator):
     def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, Any]:
-        print(features)
+        print(features.shape)
         return features
 
 @dataclass
