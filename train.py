@@ -23,6 +23,22 @@ class ImageCaptionDataCollator(DefaultDataCollator):
 class ScriptArguments:
     data_dir: Optional[str] = "data"
 
+class ClipCapRLTrainer(Trainer):
+    def __init__(self, prefix_length: int, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.prefix_length = prefix_length
+
+    def compute_loss(self, model, inputs, return_outputs=False):
+        x, _, y, mask = inputs
+        outputs = model(x, y, mask)
+        logits = outputs.logits[:, self.prefix_length-1: -1]
+
+        loss = F.cross_entropy(
+                logits.contiguous().view(-1, logits.shape[-1]), 
+                y.flatten(),
+                ignore_index=model.tokenizer.pad_token_id)
+        return (loss, outputs) if return_outputs else loss
+
 # def compute_metrics(preds, labels):
 #     return {}
 
@@ -84,7 +100,8 @@ if __name__ == "__main__":
                 ignore_index=model.tokenizer.pad_token_id)
         return (loss, outputs) if return_outputs else loss
 
-    trainer = Trainer(
+    trainer = ClipCapRLTrainer(
+        prefix_length=conf.prefix_length,
         model=model,
         args=training_args,
         train_dataset=train_dataset,
