@@ -3,8 +3,8 @@ import torch.nn as nn
 from dataclasses import dataclass, field
 import math
 from typing import Optional, List
-from transformers import AutoModelForCausalLM, AutoTokenizer, StoppingCriteria
-from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training, BitsAndBytesConfig
+from transformers import AutoModelForCausalLM, AutoTokenizer, StoppingCriteria, BitsAndBytesConfig
+from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 
 class KeywordsStoppingCriteria(StoppingCriteria):
     def __init__(self, keywords_ids:list):
