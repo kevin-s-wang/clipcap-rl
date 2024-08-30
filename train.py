@@ -9,14 +9,14 @@ from dataclasses import dataclass
 from data import ImageCaptionDataset
 from configuration_clipcap_rl import ClipCapRLConfig
 from modeling_clipcap_rl import ClipCapRLModel
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from transformers import HfArgumentParser
 
 class ImageCaptionDataCollator(DataCollator):
-    def collate_batch(self, features, return_tensors=None):            
-        print(features)
-        return features
-
+    def __call__(self, features: List[Dict[str, Any]], return_tensors=None) -> Dict[str, Any]:
+        if return_tensors is None:
+            return_tensors = self.return_tensors
+        return default_data_collator(features, return_tensors)
 @dataclass
 class ScriptArguments:
     data_dir: Optional[str] = "data"
@@ -30,17 +30,23 @@ if __name__ == "__main__":
         report_to="tensorboard",
         run_name=f"phi3.5-clipcap-QLoRA-{datetime.now().strftime('%Y-%m-%d-%H-%M-%s')}",
         output_dir="./",
-        per_device_train_batch_size=64,
-        gradient_accumulation_steps=4,
-        # gradient_checkpointing=True,
+        per_device_train_batch_size=32,
+        per_device_eval_batch_size=32,
+        gradient_accumulation_steps=2,
+        save_total_limit=3,
+        eval_strategy="steps",
+        eval_steps=50,
+        save_strategy="steps",
+        save_steps=50,
+        logging_steps=50,
+        remove_unused_columns=False,
         optim="paged_adamw_8bit",
         bf16=True,
         learning_rate=2e-5,
         lr_scheduler_type="constant",
         num_train_epochs=2,
-        save_steps=1,
-        logging_steps=1,
         warmup_steps=5,
+        load_best_model_at_end=True,
         ddp_find_unused_parameters=False,
     )
 
@@ -69,7 +75,6 @@ if __name__ == "__main__":
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         tokenizer=model.tokenizer,
-        data_collator=ImageCaptionDataCollator(),
     )
 
     trainer.train()
