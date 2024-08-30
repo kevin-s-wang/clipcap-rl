@@ -7,10 +7,10 @@ class ClipCapRLConfig(PretrainedConfig):
 
     def __init__(
         self, 
-        language_model_id: Optional[str] = "gpt2-large",
+        language_model_id: Optional[str] = "gpt2-medium",
         prefix_length: Optional[int] = 10,
         max_length: Optional[int] = 20,
-        d_model: Optional[int] = 1280,
+        d_model: Optional[int] = 1024,
         d_clip: Optional[int] = 512,
         n_heads: Optional[int] = 8,
         n_layers: Optional[int] = 12,
