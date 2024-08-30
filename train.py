@@ -12,11 +12,7 @@ from modeling_clipcap_rl import ClipCapRLModel
 from typing import Optional, List, Dict, Any
 from transformers import HfArgumentParser
 
-class ImageCaptionDataCollator(DataCollator):
-    def __call__(self, features: List[Dict[str, Any]], return_tensors=None) -> Dict[str, Any]:
-        if return_tensors is None:
-            return_tensors = self.return_tensors
-        return default_data_collator(features, return_tensors)
+
 @dataclass
 class ScriptArguments:
     data_dir: Optional[str] = "data"
@@ -66,7 +62,6 @@ if __name__ == "__main__":
         tokenizer=model.tokenizer,
         split="val",
         data_dir=args.data_dir)
-
 
 
     trainer = Trainer(
