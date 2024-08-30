@@ -51,7 +51,6 @@ if __name__ == "__main__":
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
-        dataset_text_field="",  # need a dummy field
         tokenizer=model.tokenizer,
         data_collator=DefaultDataCollator(),
         dataset_kwargs={"skip_prepare_dataset": True},
