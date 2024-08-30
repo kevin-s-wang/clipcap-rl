@@ -10,7 +10,7 @@ class ClipCapRLConfig(PretrainedConfig):
         language_model_id: Optional[str] = "google/gemma-2-2b",
         prefix_length: Optional[int] = 10,
         max_length: Optional[int] = 20,
-        d_model: Optional[int] = 2048,
+        d_model: Optional[int] = 2304,
         d_clip: Optional[int] = 512,
         n_heads: Optional[int] = 8,
         n_layers: Optional[int] = 12,
