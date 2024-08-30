@@ -20,7 +20,7 @@ class ScriptArguments:
 if __name__ == "__main__":
 
     parser = HfArgumentParser((ScriptArguments,))
-    args = parser.parse_args_into_dataclasses()
+    args, = parser.parse_args_into_dataclasses()
 
     training_args = TrainingArguments(
         report_to="tensorboard",
