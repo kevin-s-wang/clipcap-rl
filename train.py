@@ -25,7 +25,7 @@ class ImageCaptionDataCollator(DefaultDataCollator):
 
         for feature in features:
             _features['image_embeddings'].append(feature[0])
-            _features['caption_embeddings'].append(feature[1])
+            # _features['caption_embeddings'].append(feature[1])
             _features['tokens'].append(feature[2])
             _features['mask'].append(feature[3])
         return _features
