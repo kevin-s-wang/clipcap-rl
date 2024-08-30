@@ -18,7 +18,7 @@ class ImageCaptionDataCollator(DefaultDataCollator):
     def __call__(self, features: List[Tuple]) -> Dict[str, Any]:
         _features = {
             'image_embeddings': [],
-            'caption_embeddings': [],
+            # 'caption_embeddings': [],
             'tokens': [],
             'mask': []
         }
