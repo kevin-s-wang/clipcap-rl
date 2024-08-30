@@ -13,21 +13,17 @@ from typing import Optional, List, Dict, Any
 from transformers import HfArgumentParser
 import torch.nn.functional as F
 from typing import Tuple
+import torch
 
 class ImageCaptionDataCollator(DefaultDataCollator):
     def __call__(self, features: List[Tuple]) -> Dict[str, Any]:
         _features = {
-            'image_embeddings': [],
+            'image_embeddings': torch.stack([f[0] for f in features]),
             # 'caption_embeddings': [],
-            'tokens': [],
-            'mask': []
+            'tokens': torch.stack([f[2] for f in features]),
+            'mask': torch.stack([f[3] for f in features]),
         }
 
-        for feature in features:
-            _features['image_embeddings'].append(feature[0])
-            # _features['caption_embeddings'].append(feature[1])
-            _features['tokens'].append(feature[2])
-            _features['mask'].append(feature[3])
         return _features
 
 @dataclass
