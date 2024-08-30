@@ -7,10 +7,10 @@ class ClipCapRLConfig(PretrainedConfig):
 
     def __init__(
         self, 
-        language_model_id: Optional[str] = "microsoft/Phi-3.5-mini-instruct",
+        language_model_id: Optional[str] = "google/gemma-2-2b",
         prefix_length: Optional[int] = 10,
         max_length: Optional[int] = 20,
-        d_model: Optional[int] = 3072,
+        d_model: Optional[int] = 2048,
         d_clip: Optional[int] = 512,
         n_heads: Optional[int] = 8,
         n_layers: Optional[int] = 12,
