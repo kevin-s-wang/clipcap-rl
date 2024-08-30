@@ -16,7 +16,6 @@ import torch.nn.functional as F
 
 class ImageCaptionDataCollator(DefaultDataCollator):
     def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, Any]:
-        print(len(features), len(features[0]))
         return features
 
 @dataclass
@@ -29,14 +28,14 @@ class ClipCapRLTrainer(Trainer):
         self.prefix_length = prefix_length
 
     def compute_loss(self, model, inputs, return_outputs=False):
-        print('inputs: ', len(inputs))
-        x, _, y, mask = inputs
-        outputs = model(x, y, mask)
+        # print('inputs: ', len(inputs))
+        # x, _, y, mask = inputs
+        outputs = model(**inputs)
         logits = outputs.logits[:, self.prefix_length-1: -1]
 
         loss = F.cross_entropy(
                 logits.contiguous().view(-1, logits.shape[-1]), 
-                y.flatten(),
+                inputs['tokens'].flatten(),
                 ignore_index=model.tokenizer.pad_token_id)
         return (loss, outputs) if return_outputs else loss
 
