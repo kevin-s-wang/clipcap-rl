@@ -253,7 +253,7 @@ class ClipCapRLModel(PreTrainedModel):
         return self
 
     def forward(self, image_embeddings: torch.Tensor, tokens: Optional[torch.Tensor]=None, mask: Optional[torch.Tensor]=None) -> torch.Tensor:
-        x = self.prefix_encoder(image_embeddings).view(-1, self.conf.prefix_length, self.conf.d_model)
+        x = self.prefix_encoder(image_embeddings).view(-1, self.config.prefix_length, self.config.d_model)
 
         if tokens is not None:
             token_embeddings = self.language_model.get_input_embeddings()(tokens).squeeze(1)
