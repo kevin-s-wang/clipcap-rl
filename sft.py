@@ -53,7 +53,6 @@ if __name__ == "__main__":
         eval_dataset=eval_dataset,
         tokenizer=model.tokenizer,
         data_collator=DefaultDataCollator(),
-        dataset_kwargs={"skip_prepare_dataset": True},
     )
 
     trainer.train()
