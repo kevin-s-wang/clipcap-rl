@@ -258,6 +258,7 @@ class ClipCapRLModel(PreTrainedModel):
         if tokens is not None:
             token_embeddings = self.language_model.get_input_embeddings()(tokens).squeeze(1)
             x = torch.cat((x, token_embeddings), dim=1)
-        
+        print('x: ', x.shape)
+        print('mask: ', mask.shape)
         x = self.language_model(inputs_embeds=x, attention_mask=mask)
         return x
