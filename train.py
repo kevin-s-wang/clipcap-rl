@@ -63,7 +63,7 @@ if __name__ == "__main__":
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         tokenizer=model.tokenizer,
-        data_collator=DefaultDataCollator(),
+        # data_collator=DefaultDataCollator(),
     )
 
     trainer.train()
