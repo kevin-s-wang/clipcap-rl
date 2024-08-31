@@ -76,10 +76,11 @@ if __name__ == "__main__":
         lr_scheduler_type="linear",
         num_train_epochs=10,
         warmup_steps=5,
+
         # load_best_model_at_end=True,
     )
 
-    conf = ClipCapRLConfig()
+    conf = ClipCapRLConfig(use_lora=True)
     model = ClipCapRLModel(conf)
     
     train_dataset = ImageCaptionDataset(
@@ -107,6 +108,22 @@ if __name__ == "__main__":
                 y.flatten(),
                 ignore_index=model.tokenizer.pad_token_id)
         return (loss, outputs) if return_outputs else loss
+
+    def print_trainable_parameters(model):
+        """
+        Prints the number of trainable parameters in the model.
+        """
+        trainable_params = 0
+        all_param = 0
+        for _, param in model.named_parameters():
+            all_param += param.numel()
+            if param.requires_grad:
+                trainable_params += param.numel()
+        print(
+            f"Trainable params: {trainable_params} || all params: {all_param} || trainable%: {100 * trainable_params / all_param}"
+        )
+
+    print_trainable_parameters(model)
 
     trainer = ClipCapRLTrainer(
         prefix_length=conf.prefix_length,
