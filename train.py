@@ -110,9 +110,6 @@ if __name__ == "__main__":
         return (loss, outputs) if return_outputs else loss
 
     def print_trainable_parameters(model):
-        """
-        Prints the number of trainable parameters in the model.
-        """
         trainable_params = 0
         all_param = 0
         for _, param in model.named_parameters():
@@ -120,7 +117,7 @@ if __name__ == "__main__":
             if param.requires_grad:
                 trainable_params += param.numel()
         print(
-            f"Trainable params: {trainable_params} || all params: {all_param} || trainable%: {100 * trainable_params / all_param}"
+            f"Trainable params: {trainable_params} | all params: {all_param} | trainable %: {100 * trainable_params / all_param}"
         )
 
     print_trainable_parameters(model)
