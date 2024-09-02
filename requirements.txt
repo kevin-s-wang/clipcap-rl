@@ -1,0 +1,11 @@
+torch
+transformers
+sentencepiece
+accelerate
+peft
+
+# Evaluation metrics
+rouge
+rouge_score
+sacrebleu
+meteor
