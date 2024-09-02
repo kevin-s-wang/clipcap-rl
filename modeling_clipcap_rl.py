@@ -250,7 +250,11 @@ class ClipCapRLModel(PreTrainedModel):
         self.train(False)
         return self
 
-    def forward(self, image_embeddings: torch.Tensor, tokens: Optional[torch.Tensor]=None, mask: Optional[torch.Tensor]=None) -> torch.Tensor:
+    def forward(self, 
+        image_embeddings: torch.Tensor, 
+        tokens: Optional[torch.Tensor]=None, 
+        mask: Optional[torch.Tensor]=None,
+    ) -> torch.Tensor:
         x = self.prefix_encoder(image_embeddings).view(-1, self.config.prefix_length, self.config.d_model)
 
         if tokens is not None:

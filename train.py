@@ -50,7 +50,28 @@ class ClipCapRLTrainer(Trainer):
 
 # def compute_metrics(preds, labels):
 #     return {}
+import evaluate
 
+bleu = evaluate.load("sacrebleu")
+rouge = evaluate.load("rouge")
+meteor = evaluate.load("meteor")
+
+def get_compute_metrics_fn(tokenizer, prefix_length):
+    def compute_metrics(pred):
+
+        label_ids = torch.from_numpy(pred.label_ids).squeeze(1)
+        predictions = pred.predictions[:, prefix_length-1: -1]
+        pred_ids = torch.argmax(torch.from_numpy(predictions), dim=-1)
+
+        label_str = tokenizer.batch_decode(label_ids, skip_special_tokens=True)
+        pred_str = tokenizer.batch_decode(pred_ids, skip_special_tokens=True)
+
+        metrics = {}
+        metrics.update(bleu.compute(predictions= pred_str, references=label_str))
+        metrics.update(rouge.compute(predictions=pred_str, references=label_str))
+        metrics.update(meteor.compute(predictions=pred_str, references=label_str))
+        return metrics
+    return compute_metrics
 
 if __name__ == "__main__":
 
@@ -62,11 +83,12 @@ if __name__ == "__main__":
         run_name=f"gpt2-clipcap-{datetime.now().strftime('%Y-%m-%d-%H-%M-%s')}",
         output_dir="./clipcap-gpt2-medium",
         per_device_train_batch_size=64,
-        per_device_eval_batch_size=32,
+        per_device_eval_batch_size=4,
+        eval_accumulation_steps=4,
         gradient_accumulation_steps=4,
         save_total_limit=2,
-        # eval_strategy="steps",
-        # eval_steps=50,
+        eval_strategy="steps",
+        eval_steps=10,
         save_strategy="steps",
         save_steps=10,
         logging_steps=10,
@@ -74,11 +96,12 @@ if __name__ == "__main__":
         optim="adamw_torch",
         bf16=True,
         learning_rate=2e-5,
+        label_names=["tokens"],
         lr_scheduler_type="linear",
         save_safetensors=False,
         num_train_epochs=10,
         warmup_steps=5,
-        # load_best_model_at_end=True,
+        load_best_model_at_end=True,
     )
 
     conf = ClipCapRLConfig(
@@ -88,11 +111,14 @@ if __name__ == "__main__":
             )
     model = ClipCapRLModel(conf)
     
+    sample_frac = 0.01
+
     train_dataset = ImageCaptionDataset(
         max_length=conf.max_length,
         prefix_length=conf.prefix_length,
         tokenizer=model.tokenizer,
         split="train",
+        sample_frac=0.1,
         data_dir=args.data_dir)
     
     eval_dataset = ImageCaptionDataset(
@@ -100,6 +126,7 @@ if __name__ == "__main__":
         prefix_length=conf.prefix_length,
         tokenizer=model.tokenizer,
         split="val",
+        sample_frac=sample_frac,
         data_dir=args.data_dir)
 
 
@@ -124,6 +151,8 @@ if __name__ == "__main__":
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         tokenizer=model.tokenizer,
+        
+        compute_metrics=get_compute_metrics_fn(model.tokenizer, conf.prefix_length),
         data_collator=ImageCaptionDataCollator(),
     )
 

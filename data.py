@@ -10,7 +10,14 @@ def check_splits(split: str) -> None:
         raise ValueError(f"Allowed splits are: {','.join(allowed_splits)}")
     
 class ImageCaptionDataset(Dataset):
-    def __init__(self, max_length: int, prefix_length: int, tokenizer: AutoTokenizer, split: str = 'train', data_dir: str = None) -> None:
+    def __init__(self, 
+        max_length: int, 
+        prefix_length: int, 
+        tokenizer: AutoTokenizer, 
+        split: str = 'train', 
+        data_dir: Optional[str] = None,
+        sample_frac: Optional[float] = None) -> None:
+
         super().__init__()
         
         check_splits(split)
@@ -23,7 +30,8 @@ class ImageCaptionDataset(Dataset):
         self.caption_embeddings: Optional[torch.Tensor] = None
         self.metadata: Optional[List] = None
         self.tokenizer = tokenizer
-        # self.tokenizer.pad_token = self.tokenizer.eos_token
+        self.sample_frac = sample_frac
+
         self._load_data()
 
     def is_train(self) -> bool:
@@ -37,6 +45,10 @@ class ImageCaptionDataset(Dataset):
 
     def _load_data(self) -> None:
         self.data = pd.read_parquet(self.data_dir, engine='pyarrow', filters=[('split', '=', self.split)])
+
+        # Sampling for faster training, especially for debugging and evaluation
+        if self.sample_frac is not None:
+            self.data = self.data.sample(frac=self.sample_frac)
 
     def __len__(self) -> int:
         return len(self.data)
