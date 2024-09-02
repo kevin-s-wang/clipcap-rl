@@ -17,11 +17,10 @@ if __name__ == "__main__":
 
     tokenizer = AutoTokenizer.from_pretrained(
         model_config.model_name_or_path,
-        padding_side="left",
         trust_remote_code=model_config.trust_remote_code,
     )
 
-    tokenizer.add_special_tokens({"pad_token": "[PAD]"})
+    tokenizer.pad_token_id = tokenizer.eos_token_id
 
     value_model = AutoModelForSequenceClassification.from_pretrained(
         config.reward_model_path, trust_remote_code=model_config.trust_remote_code, num_labels=1

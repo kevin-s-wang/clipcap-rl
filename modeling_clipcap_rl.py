@@ -5,8 +5,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
-from peft import prepare_model_for_kbit_training, get_peft_model, LoraConfig
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from peft import get_peft_model, LoraConfig
 from typing import Optional
 
 
@@ -186,7 +186,7 @@ class ClipCapRLModel(PreTrainedModel):
     def setup(self):
         _model = AutoModelForCausalLM.from_pretrained(
                     self.config.language_model_id,
-
+                    use_cache=False,
                     # quantization_config= BitsAndBytesConfig(
                     #     # Load the model with 4-bit quantization
                     #     load_in_4bit=True,
@@ -199,7 +199,7 @@ class ClipCapRLModel(PreTrainedModel):
                     # )
                 )
         
-        self.tokenizer = AutoTokenizer.from_pretrained(self.config.language_model_id)
+        self.tokenizer = AutoTokenizer.from_pretrained(self.config.language_model_id, clean_up_tokenization_spaces=True)
         self.tokenizer.pad_token = self.tokenizer.eos_token
 
         self.prefix_encoder = VisionPrefixModel(self.config)
@@ -207,7 +207,7 @@ class ClipCapRLModel(PreTrainedModel):
             # Enabling gradient checkpointing, to make the training further efficient
             _model.gradient_checkpointing_enable()
             # Set up the model for quantization-aware training e.g. casting layers, parameter freezing, etc.
-            _model = prepare_model_for_kbit_training(_model)
+            # _model = prepare_model_for_kbit_training(_model)
 
             _model = get_peft_model(_model, 
                         LoraConfig(
@@ -237,14 +237,13 @@ class ClipCapRLModel(PreTrainedModel):
                             bias="none",
                         )
                     )
-            _model.print_trainable_parameters()
 
         self.language_model = _model
 
 
     def train(self, mode: bool=True):
         self.prefix_encoder.train(mode)
-        self.language_model.train(self.config.use_lora)
+        self.language_model.train(mode and self.config.use_lora)
         return self
     
     def eval(self):
@@ -259,3 +258,75 @@ class ClipCapRLModel(PreTrainedModel):
             x = torch.cat((x, token_embeddings), dim=1)
         x = self.language_model(inputs_embeds=x, attention_mask=mask)
         return x
+    
+    @torch.inference_mode()
+    def generate(
+        self,
+        image_embeddings: torch.Tensor,
+        max_length: Optional[int] = 50,
+        max_new_tokens: Optional[int] = 77,
+        stop_words = ['.'], 
+        temperature: Optional[float]=.7, 
+        top_k: Optional[int] = 50,
+        top_p: Optional[float] = None,
+        n_beams: Optional[int] = None,
+        do_sample: Optional[bool] = True,
+    ) -> torch.LongTensor:
+    
+        # Convert image embeddings to input ids
+
+        inputs_embeds = self.prefix_encoder(image_embeddings).view(-1, self.config.prefix_length, self.config.d_model)
+        # Transform stop words to token ids
+        stop_ids = [self.tokenizer.encode(w)[0] for w in stop_words]
+        
+        # Calculate the maximum length of the generated sequence
+        max_length = min(max_length, max_new_tokens - self.config.prefix_length)
+        new_tokens = None
+        for _ in range(max_length):
+            _next_token = self.next_token(inputs_embeds, temperature, top_k)
+            
+            if new_tokens is None:
+                new_tokens = _next_token
+            else:
+                new_tokens = torch.cat((new_tokens, _next_token), dim=1)
+
+            next_token_embed = self.language_model.get_input_embeddings()(_next_token)
+
+            inputs_embeds = torch.cat((inputs_embeds, next_token_embed), dim=1)
+            if _next_token in stop_ids:
+                break
+        return new_tokens
+    
+    def next_token(self, inputs_embeds, temperature=1.0, top_k=None):
+        out = self.language_model(inputs_embeds=inputs_embeds)
+        next_token_logits = out.logits[:, -1, :]
+
+        if top_k is not None:
+            v, i = torch.topk(next_token_logits, min(top_k, next_token_logits.size(-1)))
+            next_token_logits = torch.full_like(next_token_logits, float("-inf")).scatter_(-1, i, v)
+        
+        if temperature > 0.0:
+            probs = torch.nn.functional.softmax(next_token_logits / temperature, dim=-1)
+
+            if torch._dynamo.is_compiling():
+                # Faster alternative to `torch.multinomial(probs, num_samples=1)` that is also CUDAGraph friendly
+                distribution = torch.empty_like(probs).exponential_(1)
+                return torch.argmax(probs / distribution, dim=-1, keepdim=True)
+            return torch.multinomial(probs, num_samples=1)
+        
+        return torch.argmax(next_token_logits, dim=-1, keepdim=True)
+
+    def print_trainable_parameters(self):
+        trainable_params = 0
+        all_param = 0
+        for _, param in self.named_parameters():
+            all_param += param.numel()
+            if param.requires_grad:
+                trainable_params += param.numel()
+        print(f"Trainable params: {trainable_params} | Total params: {all_param} | Trainable %: {100 * trainable_params / all_param}")
+
+
+
+
+
+

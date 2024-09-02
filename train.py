@@ -51,6 +51,7 @@ class ClipCapRLTrainer(Trainer):
 # def compute_metrics(preds, labels):
 #     return {}
 
+
 if __name__ == "__main__":
 
     parser = HfArgumentParser((ScriptArguments,))
@@ -59,28 +60,32 @@ if __name__ == "__main__":
     training_args = TrainingArguments(
         report_to="tensorboard",
         run_name=f"gpt2-clipcap-{datetime.now().strftime('%Y-%m-%d-%H-%M-%s')}",
-        output_dir="./",
-        per_device_train_batch_size=32,
+        output_dir="./clipcap-gpt2-medium",
+        per_device_train_batch_size=64,
         per_device_eval_batch_size=32,
         gradient_accumulation_steps=4,
         save_total_limit=2,
         # eval_strategy="steps",
         # eval_steps=50,
         save_strategy="steps",
-        save_steps=1000,
-        logging_steps=100,
+        save_steps=10,
+        logging_steps=10,
         remove_unused_columns=False,
         optim="adamw_torch",
         bf16=True,
         learning_rate=2e-5,
         lr_scheduler_type="linear",
+        save_safetensors=False,
         num_train_epochs=10,
         warmup_steps=5,
-
         # load_best_model_at_end=True,
     )
 
-    conf = ClipCapRLConfig(use_lora=True)
+    conf = ClipCapRLConfig(
+                use_lora=True, 
+                prefix_length=20,
+                max_length=50,
+            )
     model = ClipCapRLModel(conf)
     
     train_dataset = ImageCaptionDataset(
@@ -109,18 +114,8 @@ if __name__ == "__main__":
                 ignore_index=model.tokenizer.pad_token_id)
         return (loss, outputs) if return_outputs else loss
 
-    def print_trainable_parameters(model):
-        trainable_params = 0
-        all_param = 0
-        for _, param in model.named_parameters():
-            all_param += param.numel()
-            if param.requires_grad:
-                trainable_params += param.numel()
-        print(
-            f"Trainable params: {trainable_params} | all params: {all_param} | trainable %: {100 * trainable_params / all_param}"
-        )
 
-    print_trainable_parameters(model)
+    model.print_trainable_parameters()
 
     trainer = ClipCapRLTrainer(
         prefix_length=conf.prefix_length,

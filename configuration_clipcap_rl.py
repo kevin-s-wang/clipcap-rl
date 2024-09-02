@@ -13,7 +13,7 @@ class ClipCapRLConfig(PretrainedConfig):
         d_model: Optional[int] = 1024,
         d_clip: Optional[int] = 512,
         n_heads: Optional[int] = 8,
-        n_layers: Optional[int] = 12,
+        n_layers: Optional[int] = 8,
         d_ff: Optional[int] = 2048,
         dropout: Optional[float] = 0.1,
         use_lora: Optional[bool] = False,
