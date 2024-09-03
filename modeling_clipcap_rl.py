@@ -270,7 +270,7 @@ class ClipCapRLModel(PreTrainedModel):
         max_length: Optional[int] = 50,
         max_new_tokens: Optional[int] = 77,
         stop_words = ['.'], 
-        temperature: Optional[float]=.7, 
+        temperature: Optional[float]=1.0, 
         top_k: Optional[int] = 50,
         top_p: Optional[float] = None,
         n_beams: Optional[int] = None,

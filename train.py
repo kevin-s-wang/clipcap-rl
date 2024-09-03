@@ -34,11 +34,8 @@ class ClipCapRLTrainer(Trainer):
     def __init__(self, prefix_length: int, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.prefix_length = prefix_length
-        # self.tokenizer = tokenizer
 
     def compute_loss(self, model, inputs, return_outputs=False):
-        # print('inputs: ', inputs)
-        # x, _, y, mask = inputs
         outputs = model(**inputs)
         logits = outputs.logits[:, self.prefix_length-1: -1]
 
@@ -48,13 +45,13 @@ class ClipCapRLTrainer(Trainer):
                 ignore_index=self.tokenizer.pad_token_id)
         return (loss, outputs) if return_outputs else loss
 
-# def compute_metrics(preds, labels):
-#     return {}
+
 import evaluate
 
-bleu = evaluate.load("sacrebleu")
-rouge = evaluate.load("rouge")
-meteor = evaluate.load("meteor")
+# bleu = evaluate.load("sacrebleu")
+# rouge = evaluate.load("rouge")
+# meteor = evaluate.load("meteor")
+wer = evaluate.load('wer')
 
 def get_compute_metrics_fn(tokenizer, prefix_length):
     def compute_metrics(pred):
@@ -67,9 +64,10 @@ def get_compute_metrics_fn(tokenizer, prefix_length):
         pred_str = tokenizer.batch_decode(pred_ids, skip_special_tokens=True)
 
         metrics = {}
-        metrics.update(bleu.compute(predictions= pred_str, references=label_str))
-        metrics.update(rouge.compute(predictions=pred_str, references=label_str))
-        metrics.update(meteor.compute(predictions=pred_str, references=label_str))
+        metrics.update(wer.compute(predictions=pred_str, references=label_str))
+        # metrics.update(bleu.compute(predictions= pred_str, references=label_str))
+        # metrics.update(rouge.compute(predictions=pred_str, references=label_str))
+        # metrics.update(meteor.compute(predictions=pred_str, references=label_str))
         return metrics
     return compute_metrics
 
@@ -80,7 +78,7 @@ if __name__ == "__main__":
 
     training_args = TrainingArguments(
         report_to="tensorboard",
-        run_name=f"gpt2-clipcap-{datetime.now().strftime('%Y-%m-%d-%H-%M-%s')}",
+        run_name=f"clipcap-gpt2-medium-{datetime.now().strftime('%Y-%m-%d-%H-%M-%s')}",
         output_dir="./clipcap-gpt2-medium",
         per_device_train_batch_size=64,
         per_device_eval_batch_size=4,
@@ -100,7 +98,7 @@ if __name__ == "__main__":
         lr_scheduler_type="linear",
         save_safetensors=False,
         num_train_epochs=10,
-        warmup_steps=5,
+        warmup_steps=500,
         load_best_model_at_end=True,
     )
 

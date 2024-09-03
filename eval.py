@@ -6,8 +6,8 @@ import torch
 
 
 if __name__ == '__main__':
-    config = ClipCapRLConfig.from_pretrained('out', local_files_only=True) 
-    model = ClipCapRLModel.from_pretrained('out', local_files_only=True, config=config)
+    config = ClipCapRLConfig.from_pretrained('clipcap-gpt2-medium', local_files_only=True) 
+    model = ClipCapRLModel.from_pretrained('clipcap-gpt2-medium', local_files_only=True, config=config)
     
     model.eval()
 
@@ -18,5 +18,5 @@ if __name__ == '__main__':
 
     print('sample: ', sample['caption'])
     print('image: ', sample['filepath'])
-    tokens = model.generate(torch.from_numpy(sample['image_embeddings']), temperature=0.5)
+    tokens = model.generate(torch.from_numpy(sample['image_embeddings']), temperature=.7)
     print(model.tokenizer.decode(tokens[0], skip_special_tokens=True))
