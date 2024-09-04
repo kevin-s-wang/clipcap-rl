@@ -267,7 +267,7 @@ class ClipCapRLModel(PreTrainedModel):
     def generate(
         self,
         image_embeddings: torch.Tensor,
-        max_length: Optional[int] = 50,
+        max_length: Optional[int] = 512,
         max_new_tokens: Optional[int] = 77,
         stop_words = ['.'], 
         temperature: Optional[float]=1.0, 
@@ -284,7 +284,7 @@ class ClipCapRLModel(PreTrainedModel):
         stop_ids = [self.tokenizer.encode(w)[0] for w in stop_words]
         
         # Calculate the maximum length of the generated sequence
-        max_length = min(max_length, max_new_tokens - self.config.prefix_length)
+        max_length = min(max_length - self.config.prefix_length, max_new_tokens)
         new_tokens = None
         for _ in range(max_length):
             _next_token = self.next_token(inputs_embeds, temperature, top_k)

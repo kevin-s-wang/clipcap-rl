@@ -48,10 +48,10 @@ class ClipCapRLTrainer(Trainer):
 
 import evaluate
 
-# bleu = evaluate.load("sacrebleu")
-# rouge = evaluate.load("rouge")
-# meteor = evaluate.load("meteor")
-wer = evaluate.load('wer')
+#bleu = evaluate.load("sacrebleu")
+rouge = evaluate.load("rouge")
+#meteor = evaluate.load("meteor")
+# wer = evaluate.load('wer')
 
 def get_compute_metrics_fn(tokenizer, prefix_length):
     def compute_metrics(pred):
@@ -64,10 +64,10 @@ def get_compute_metrics_fn(tokenizer, prefix_length):
         pred_str = tokenizer.batch_decode(pred_ids, skip_special_tokens=True)
 
         metrics = {}
-        metrics.update(wer.compute(predictions=pred_str, references=label_str))
+        # metrics.update(wer.compute(predictions=pred_str, references=label_str))
         # metrics.update(bleu.compute(predictions= pred_str, references=label_str))
-        # metrics.update(rouge.compute(predictions=pred_str, references=label_str))
-        # metrics.update(meteor.compute(predictions=pred_str, references=label_str))
+        metrics.update(rouge.compute(predictions=pred_str, references=label_str))
+ #       metrics.update(meteor.compute(predictions=pred_str, references=label_str))
         return metrics
     return compute_metrics
 
@@ -79,17 +79,17 @@ if __name__ == "__main__":
     training_args = TrainingArguments(
         report_to="tensorboard",
         run_name=f"clipcap-gpt2-medium-{datetime.now().strftime('%Y-%m-%d-%H-%M-%s')}",
-        output_dir="./clipcap-gpt2-medium",
-        per_device_train_batch_size=64,
+        output_dir="/root/autodl-tmp/clipcap-gpt2-medium",
+        per_device_train_batch_size=350,
         per_device_eval_batch_size=4,
         eval_accumulation_steps=4,
-        gradient_accumulation_steps=4,
+        gradient_accumulation_steps=2,
         save_total_limit=2,
         eval_strategy="steps",
-        eval_steps=10,
+        eval_steps=500,
         save_strategy="steps",
-        save_steps=10,
-        logging_steps=10,
+        save_steps=500,
+        logging_steps=100,
         remove_unused_columns=False,
         optim="adamw_torch",
         bf16=True,
@@ -104,19 +104,18 @@ if __name__ == "__main__":
 
     conf = ClipCapRLConfig(
                 use_lora=True, 
-                prefix_length=20,
-                max_length=50,
+                prefix_length=30,
+                max_length=77,
             )
     model = ClipCapRLModel(conf)
     
     sample_frac = 0.01
-
+    
     train_dataset = ImageCaptionDataset(
         max_length=conf.max_length,
         prefix_length=conf.prefix_length,
         tokenizer=model.tokenizer,
         split="train",
-        sample_frac=0.1,
         data_dir=args.data_dir)
     
     eval_dataset = ImageCaptionDataset(
