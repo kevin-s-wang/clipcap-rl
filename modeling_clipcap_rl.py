@@ -240,7 +240,9 @@ class ClipCapRLModel(PreTrainedModel):
 
         self.language_model = _model
 
-
+    def parameters(self, recurse: bool = True):
+        return self.prefix_encoder.parameters()
+    
     def train(self, mode: bool=True):
         self.prefix_encoder.train(mode)
         self.language_model.train(mode and self.config.use_lora)
