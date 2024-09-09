@@ -1,2 +1,7 @@
 *_test.py
 __pycache__
+results*.json
+critic_results*.json
+clipcap-*/
+test_*.py
+.DS_Store

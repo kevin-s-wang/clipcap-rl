@@ -1,3 +1,7 @@
+
+# from transformers.utils import logging
+# logging.set_verbosity_debug()
+
 from transformers import (
     TrainingArguments,
     Trainer,
@@ -46,30 +50,30 @@ class ClipCapRLTrainer(Trainer):
         return (loss, outputs) if return_outputs else loss
 
 
-import evaluate
+# import evaluate
 
 #bleu = evaluate.load("sacrebleu")
-rouge = evaluate.load("rouge")
+# rouge = evaluate.load("rouge")
 #meteor = evaluate.load("meteor")
 # wer = evaluate.load('wer')
 
-def get_compute_metrics_fn(tokenizer, prefix_length):
-    def compute_metrics(pred):
+# def get_compute_metrics_fn(tokenizer, prefix_length):
+#     def compute_metrics(pred):
 
-        label_ids = torch.from_numpy(pred.label_ids).squeeze(1)
-        predictions = pred.predictions[:, prefix_length-1: -1]
-        pred_ids = torch.argmax(torch.from_numpy(predictions), dim=-1)
+#         label_ids = torch.from_numpy(pred.label_ids).squeeze(1)
+#         predictions = pred.predictions[:, prefix_length-1: -1]
+#         pred_ids = torch.argmax(torch.from_numpy(predictions), dim=-1)
 
-        label_str = tokenizer.batch_decode(label_ids, skip_special_tokens=True)
-        pred_str = tokenizer.batch_decode(pred_ids, skip_special_tokens=True)
+#         label_str = tokenizer.batch_decode(label_ids, skip_special_tokens=True)
+#         pred_str = tokenizer.batch_decode(pred_ids, skip_special_tokens=True)
 
-        metrics = {}
-        # metrics.update(wer.compute(predictions=pred_str, references=label_str))
-        # metrics.update(bleu.compute(predictions= pred_str, references=label_str))
-        metrics.update(rouge.compute(predictions=pred_str, references=label_str))
- #       metrics.update(meteor.compute(predictions=pred_str, references=label_str))
-        return metrics
-    return compute_metrics
+#         metrics = {}
+#         # metrics.update(wer.compute(predictions=pred_str, references=label_str))
+#         # metrics.update(bleu.compute(predictions= pred_str, references=label_str))
+#         metrics.update(rouge.compute(predictions=pred_str, references=label_str))
+#  #       metrics.update(meteor.compute(predictions=pred_str, references=label_str))
+#         return metrics
+#     return compute_metrics
 
 if __name__ == "__main__":
 
@@ -78,10 +82,10 @@ if __name__ == "__main__":
 
     training_args = TrainingArguments(
         report_to="tensorboard",
-        run_name=f"clipcap-gpt2-medium-{datetime.now().strftime('%Y-%m-%d-%H-%M-%s')}",
-        output_dir="/root/autodl-tmp/clipcap-gpt2-medium",
-        per_device_train_batch_size=512,
-        per_device_eval_batch_size=128,
+        run_name=f"clipcap-gemma2-2b-{datetime.now().strftime('%Y-%m-%d-%H-%M-%s')}",
+        output_dir="./clipcap-gemma2-2b",
+        per_device_train_batch_size=16,
+        per_device_eval_batch_size=16,
         eval_accumulation_steps=1,
         gradient_accumulation_steps=1,
         save_total_limit=2,
@@ -92,20 +96,19 @@ if __name__ == "__main__":
         remove_unused_columns=False,
         optim="adamw_torch",
         bf16=True,
-        learning_rate=5e-5,
+        learning_rate=2e-5,
         weight_decay=0.01,
         label_names=["tokens"],
         lr_scheduler_type="linear",
         save_safetensors=False,
         num_train_epochs=10,
-        warmup_steps=5000,
+        warmup_ratio=0.5,
         # load_best_model_at_end=True,
     )
 
     conf = ClipCapRLConfig(
                 use_lora=True, 
                 prefix_length=20,
-                max_length=77,
             )
     model = ClipCapRLModel(conf)
     
@@ -115,7 +118,7 @@ if __name__ == "__main__":
         max_length=conf.max_length,
         prefix_length=conf.prefix_length,
         tokenizer=model.tokenizer,
-        # sample_frac=0.001,
+        sample_frac=0.1,
         split="train",
         data_dir=args.data_dir)
     
@@ -124,7 +127,7 @@ if __name__ == "__main__":
         prefix_length=conf.prefix_length,
         tokenizer=model.tokenizer,
         split="val",
-        # sample_frac=0.1,
+        sample_frac=0.01,
         data_dir=args.data_dir)
 
 
@@ -152,6 +155,6 @@ if __name__ == "__main__":
         # compute_metrics=get_compute_metrics_fn(model.tokenizer, conf.prefix_length),
         data_collator=ImageCaptionDataCollator(),
     )
-
+    model.print_trainable_parameters()
     trainer.train()
     trainer.save_model(training_args.output_dir)

@@ -7,10 +7,10 @@ class ClipCapRLConfig(PretrainedConfig):
 
     def __init__(
         self, 
-        language_model_id: Optional[str] = "gpt2-medium",
+        language_model_id: Optional[str] = "google/gemma-2-2b",
         prefix_length: Optional[int] = 20,
         max_length: Optional[int] = 50,
-        d_model: Optional[int] = 1024,
+        d_model: Optional[int] = 2304,
         d_clip: Optional[int] = 512,
         n_heads: Optional[int] = 8,
         n_layers: Optional[int] = 8,
@@ -19,6 +19,21 @@ class ClipCapRLConfig(PretrainedConfig):
         use_lora: Optional[bool] = False,
         **kwards,
     ):
+        
+    # def __init__(
+    #     self, 
+    #     language_model_id: Optional[str] = "gpt2-medium",
+    #     prefix_length: Optional[int] = 20,
+    #     max_length: Optional[int] = 50,
+    #     d_model: Optional[int] = 1024,
+    #     d_clip: Optional[int] = 512,
+    #     n_heads: Optional[int] = 8,
+    #     n_layers: Optional[int] = 8,
+    #     d_ff: Optional[int] = 2048,
+    #     dropout: Optional[float] = 0.1,
+    #     use_lora: Optional[bool] = False,
+    #     **kwards,
+    # ):
         
         self.language_model_id = language_model_id
         self.prefix_length = prefix_length

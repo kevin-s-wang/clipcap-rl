@@ -7,7 +7,7 @@ import torch.nn.functional as F
 import math
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import get_peft_model, LoraConfig
-from typing import Optional
+from typing import Optional, Any
 
 
 class MultiHeadAttention(nn.Module):
@@ -187,62 +187,37 @@ class ClipCapRLModel(PreTrainedModel):
         _model = AutoModelForCausalLM.from_pretrained(
                     self.config.language_model_id,
                     use_cache=False,
-                    # quantization_config= BitsAndBytesConfig(
-                    #     # Load the model with 4-bit quantization
-                    #     load_in_4bit=True,
-                    #     # Use double quantization
-                    #     bnb_4bit_use_double_quant=True,
-                    #     # Use 4-bit Normal Float for storing the base model weights in GPU memory
-                    #     bnb_4bit_quant_type="nf4",
-                    #     # De-quantize the weights to 16-bit (Brain) float before the forward/backward pass
-                    #     bnb_4bit_compute_dtype=torch.bfloat16,
-                    # )
                 )
         
         self.tokenizer = AutoTokenizer.from_pretrained(self.config.language_model_id, clean_up_tokenization_spaces=True)
         self.tokenizer.pad_token = self.tokenizer.eos_token
-
+        print(_model)
         self.prefix_encoder = VisionPrefixModel(self.config)
         if self.config.use_lora:
-            # Enabling gradient checkpointing, to make the training further efficient
             _model.gradient_checkpointing_enable()
-            # Set up the model for quantization-aware training e.g. casting layers, parameter freezing, etc.
-            # _model = prepare_model_for_kbit_training(_model)
 
             _model = get_peft_model(_model, 
                         LoraConfig(
                             task_type="CAUSAL_LM",
-                            # This is the rank of the decomposed matrices A and B to be learned during fine-tuning. 
-                            # A smaller number will save more GPU memory but might result in worse performance.
                             r=32,
-                            # This is the coefficient for the learned ΔW factor, so the larger number will typically 
-                            # result in a larger behavior change after fine-tuning.
                             lora_alpha=64,
-                            # Drop out ratio for the layers in LoRA adaptors A and B.
-                            lora_dropout=0.1,
-                            # We fine-tune all linear layers in the model. It might sound a bit large, but the trainable 
-                            # adapter size is still only **1.16%** of the whole model.
                             target_modules=[
-                                "q_proj",
-                                "k_proj",
-                                "v_proj",
-                                "o_proj",
-                                "gate_proj",
-                                "up_proj",
-                                "down_proj",
-                                "lm_head",
+                                'q_proj',
+                                'k_proj',
+                                'v_proj',
+                                'o_proj',
+                                'gate_proj',
+                                'up_proj',
+                                'down_proj',
+                                'lm_head',
                             ],
-                            # Bias parameters to train. 'none' is recommended to keep the original model performing 
-                            # equally when turning off the adapter.
+                            lora_dropout=0.1,
                             bias="none",
                         )
                     )
 
         self.language_model = _model
 
-    def parameters(self, recurse: bool = True):
-        return self.prefix_encoder.parameters()
-    
     def train(self, mode: bool=True):
         self.prefix_encoder.train(mode)
         self.language_model.train(mode and self.config.use_lora)
@@ -262,6 +237,7 @@ class ClipCapRLModel(PreTrainedModel):
         if tokens is not None:
             token_embeddings = self.language_model.get_input_embeddings()(tokens).squeeze(1)
             x = torch.cat((x, token_embeddings), dim=1)
+        self.language_model.eval()
         x = self.language_model(inputs_embeds=x, attention_mask=mask)
         return x
     
@@ -270,21 +246,21 @@ class ClipCapRLModel(PreTrainedModel):
         self,
         image_embeddings: torch.Tensor,
         max_length: Optional[int] = 512,
-        max_new_tokens: Optional[int] = 77,
+        max_new_tokens: Optional[int] = 512,
         stop_words = ['.'], 
         temperature: Optional[float]=1.0, 
         top_k: Optional[int] = 50,
         top_p: Optional[float] = None,
         n_beams: Optional[int] = None,
         do_sample: Optional[bool] = True,
+        num_return_sequences: Optional[int] = 1,
     ) -> torch.LongTensor:
     
         # Convert image embeddings to input ids
-
         inputs_embeds = self.prefix_encoder(image_embeddings).view(-1, self.config.prefix_length, self.config.d_model)
         # Transform stop words to token ids
         stop_ids = [self.tokenizer.encode(w)[0] for w in stop_words]
-        
+        setence_count = 1
         # Calculate the maximum length of the generated sequence
         max_length = min(max_length - self.config.prefix_length, max_new_tokens)
         new_tokens = None
@@ -300,7 +276,9 @@ class ClipCapRLModel(PreTrainedModel):
 
             inputs_embeds = torch.cat((inputs_embeds, next_token_embed), dim=1)
             if _next_token in stop_ids:
-                break
+                if setence_count >= num_return_sequences:
+                    break
+                setence_count += 1
         return new_tokens
     
     def next_token(self, inputs_embeds, temperature=1.0, top_k=None):
@@ -312,7 +290,7 @@ class ClipCapRLModel(PreTrainedModel):
             next_token_logits = torch.full_like(next_token_logits, float("-inf")).scatter_(-1, i, v)
         
         if temperature > 0.0:
-            probs = torch.nn.functional.softmax(next_token_logits / temperature, dim=-1)
+            probs = F.softmax(next_token_logits / temperature, dim=-1)
 
             if torch._dynamo.is_compiling():
                 # Faster alternative to `torch.multinomial(probs, num_samples=1)` that is also CUDAGraph friendly
@@ -321,6 +299,65 @@ class ClipCapRLModel(PreTrainedModel):
             return torch.multinomial(probs, num_samples=1)
         
         return torch.argmax(next_token_logits, dim=-1, keepdim=True)
+
+    @torch.inference_mode()
+    def generate_with_critic(self,
+        critic_model: Any,
+        image_embeddings: torch.Tensor,
+        max_length: Optional[int] = 512,
+        max_new_tokens: Optional[int] = 77,
+        stop_words = ['.'], 
+        temperature: Optional[float]=1.0, 
+        top_k: Optional[int] = 50):
+
+        # Convert image embeddings to input ids
+        inputs_embeds = self.prefix_encoder(image_embeddings).view(-1, self.config.prefix_length, self.config.d_model)
+        # Transform stop words to token ids
+        stop_ids = [self.tokenizer.encode(w)[0] for w in stop_words]
+        # Calculate the maximum length of the generated sequence
+        max_length = min(max_length - self.config.prefix_length, max_new_tokens)
+        new_tokens = None
+
+        for step in range(max_length):
+            out = self.language_model(inputs_embeds=inputs_embeds)
+            next_token_logits = out.logits[:, -1, :]
+
+            if top_k is not None:
+                v, i = torch.topk(next_token_logits, min(top_k, next_token_logits.size(-1)))
+                next_token_logits = torch.full_like(next_token_logits, float("-inf")).scatter_(-1, i, v)
+        
+            if temperature > 0.0:
+                probs = F.softmax(next_token_logits / temperature, dim=-1)
+
+            if step != 0 and step % 2 == 0:
+
+                sampled_tokens = torch.multinomial(probs, num_samples=top_k)
+                sampled_tokens = sampled_tokens.permute(1, 0)
+                
+                if new_tokens is None:
+                    candidates_tokens = sampled_tokens
+                else:
+                    candidates_tokens = torch.cat(
+                        (new_tokens.repeat(sampled_tokens.shape[0], new_tokens.shape[0]), 
+                        sampled_tokens), dim=1)
+                
+                candidates = self.tokenizer.batch_decode(candidates_tokens, skip_special_tokens=True)
+                scores = critic_model(image_embeddings, candidates)
+                _next_token = sampled_tokens[scores.argmax().item()].unsqueeze(0)
+            else:
+                _next_token = torch.multinomial(probs, num_samples=1)
+
+            if new_tokens is None:
+                new_tokens = _next_token
+            else:
+                new_tokens = torch.cat((new_tokens, _next_token), dim=1)
+
+            next_token_embed = self.language_model.get_input_embeddings()(_next_token)
+            inputs_embeds = torch.cat((inputs_embeds, next_token_embed), dim=1)
+            if _next_token in stop_ids:
+                break
+
+        return new_tokens
 
     def print_trainable_parameters(self):
         trainable_params = 0
